@@ -27,6 +27,47 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/dreams", dreamRoutes);
 
+
+// 🧪 TEMPORARY GEMINI TEST ROUTE
+app.get("/api/test-gemini", async (req, res) => {
+  try {
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": process.env.GEMINI_API_KEY,
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: "Say hello in one sentence",
+                },
+              ],
+            },
+          ],
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    console.log("GEMINI TEST:", data);
+
+    res.status(response.status).json(data);
+  } catch (error) {
+    console.error("GEMINI TEST ERROR:", error);
+
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+});
+
+
 app.get("/", (req, res) => {
   res.json({
     message: "DreamScape AI Backend Running 🚀",
