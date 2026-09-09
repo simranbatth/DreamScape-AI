@@ -11,10 +11,16 @@ import cors from "cors";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import dreamRoutes from "./routes/dreamRoutes.js";
-
 console.log(
   "GEMINI KEY:",
   process.env.GEMINI_API_KEY ? "Loaded ✅" : "Missing ❌"
+);
+
+console.log(
+  "GEMINI KEY LENGTH:",
+  process.env.GEMINI_API_KEY
+    ? process.env.GEMINI_API_KEY.length
+    : 0
 );
 
 const app = express();
