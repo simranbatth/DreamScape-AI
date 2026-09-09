@@ -1,10 +1,4 @@
 import Dream from "../models/Dream.js";
-import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  vertexai: false,
-});
 
 // Add Dream with AI Analysis
 export const addDream = async (req, res) => {
@@ -17,10 +11,20 @@ export const addDream = async (req, res) => {
       });
     }
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-
-      contents: `
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": process.env.GEMINI_API_KEY,
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `
 You are DreamScape AI, a friendly and thoughtful dream analyst.
 
 Analyze the following dream and return:
@@ -31,33 +35,57 @@ Analyze the following dream and return:
 Dream:
 ${dreamText}
 `,
-
-      config: {
-        responseMimeType: "application/json",
-
-        responseSchema: {
-          type: "object",
-          properties: {
-            aiResponse: {
-              type: "string",
+                },
+              ],
             },
-            mood: {
-              type: "string",
-            },
-            symbols: {
-              type: "array",
-              items: {
-                type: "string",
+          ],
+
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "object",
+              properties: {
+                aiResponse: {
+                  type: "string",
+                },
+                mood: {
+                  type: "string",
+                },
+                symbols: {
+                  type: "array",
+                  items: {
+                    type: "string",
+                  },
+                },
               },
+              required: ["aiResponse", "mood", "symbols"],
             },
           },
+        }),
+      }
+    );
 
-          required: ["aiResponse", "mood", "symbols"],
-        },
-      },
-    });
+    const data = await response.json();
 
-    const aiData = JSON.parse(response.text);
+    if (!response.ok) {
+      console.error("Gemini API Error:", data);
+
+      return res.status(500).json({
+        message:
+          data?.error?.message || "Gemini API request failed",
+      });
+    }
+
+    const text =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!text) {
+      return res.status(500).json({
+        message: "Gemini returned an empty response.",
+      });
+    }
+
+    const aiData = JSON.parse(text);
 
     const dream = await Dream.create({
       user: req.user.id,
@@ -71,7 +99,6 @@ ${dreamText}
       message: "Dream analyzed successfully 🌙",
       dream,
     });
-
   } catch (error) {
     console.error("Dream AI Error:", error);
 
@@ -92,7 +119,6 @@ export const getDreams = async (req, res) => {
     });
 
     res.json(dreams);
-
   } catch (error) {
     console.error("Get Dreams Error:", error);
 
