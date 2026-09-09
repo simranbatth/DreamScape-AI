@@ -1,8 +1,5 @@
 import "dotenv/config";
 
-import dotenv from "dotenv";
-
-
 import dns from "dns";
 
 dns.setServers(["8.8.8.8", "8.8.4.4"]);
@@ -15,24 +12,21 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import dreamRoutes from "./routes/dreamRoutes.js";
 
-
-
-console.log("OPENAI KEY:", process.env.OPENAI_API_KEY ? "Loaded ✅" : "Missing ❌");
+console.log(
+  "GEMINI KEY:",
+  process.env.GEMINI_API_KEY ? "Loaded ✅" : "Missing ❌"
+);
 
 const app = express();
 
-// MongoDB Connection
 connectDB();
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/dreams", dreamRoutes);
 
-// Test Route
 app.get("/", (req, res) => {
   res.json({
     message: "DreamScape AI Backend Running 🚀",
